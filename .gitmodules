@@ -1,0 +1,6 @@
+[submodule "ThirdParty/tbb"]
+	path = ThirdParty/tbb
+	url = https://github.com/wjakob/tbb.git
+[submodule "ThirdParty/googletest"]
+	path = test/ThirdParty/googletest
+	url = https://github.com/google/googletest.git

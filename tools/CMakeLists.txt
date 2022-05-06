@@ -22,7 +22,7 @@ set( Boost_USE_STATIC_LIBS   ON )
 set( Boost_DETAILED_FAILURE_MSG   ON )
 # set( Boost_DEBUG ON )
 
-if( BOOST_ROOT )
+if( TRUE ) #BOOST_ROOT )
 	# The root tree of BOOST was specified on the command line; use it to to find the specific Boost the user points too
 	find_package( Boost ${Boost.VERSION} COMPONENTS program_options REQUIRED )
 	# This will define Boost_FOUND

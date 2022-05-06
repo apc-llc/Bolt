@@ -15,8 +15,7 @@
 
 ############################################################################                                                                                     
 
-# We require 2.8.10 because of the added support to download from https URL's
-cmake_minimum_required( VERSION 2.8.10 )
+cmake_minimum_required( VERSION 2.8.12 )
 
 # uncomment these to debug nmake and borland makefiles
 #SET(CMAKE_START_TEMP_FILE "")
@@ -67,24 +66,8 @@ endif( )
 
 set_property( GLOBAL PROPERTY USE_FOLDERS TRUE )
 
-if( MSVC_IDE )
-    set( Bolt_BUILD64 ${CMAKE_CL_64} )
-else()
-#    option( Bolt_BUILD64 "Build a 64-bit product" ON )
- set( CMAKE_BUILD_TYPE ${BOLT_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE )   
-endif()
- message( STATUS "64bit build :" ${Bolt_BUILD64} )
- message( STATUS "Build Type R/D:" ${CMAKE_BUILD_TYPE} )
-
-# Modify the global find property to help us find libraries like Boost in the correct paths for 64-bit
-# Essentially, find_library calls will look for /lib64 instead of /lib; works for windows and linux
-if( Bolt_BUILD64 )
-    set_property( GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE )
-    message( STATUS "64bit build - FIND_LIBRARY_USE_LIB64_PATHS TRUE" )
-else()
-    set_property( GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS FALSE )
-    message( STATUS "32bit build - FIND_LIBRARY_USE_LIB64_PATHS FALSE" )
-endif()
+set( CMAKE_BUILD_TYPE ${BOLT_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE )   
+message( STATUS "Build Type R/D:" ${CMAKE_BUILD_TYPE} )
 
 # Various options below on configuring the build, and how to generate the solution files
 
@@ -150,27 +133,19 @@ elseif( ( C_COMPILER_NAME STREQUAL "gcc" ) OR ( CMAKE_COMPILER_IS_GNUCXX GREATER
     message( STATUS "Detected GNU fortran compiler." )
     set( CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}" )
     
-    if( Bolt_BUILD64 )
-        set( CMAKE_CXX_FLAGS "-m64 ${CMAKE_CXX_FLAGS}" )
-        set( CMAKE_C_FLAGS "-m64 ${CMAKE_C_FLAGS}" )
-        execute_process(COMMAND lsb_release -irc 
-	OUTPUT_VARIABLE suse-ubuntu)
-	STRING(FIND $(suse_ubuntu) "Ubuntu" pos)
-	SET(com -1)
-	if($(pos) EQUAL com)
-		set( CMAKE_SHARED_LINKER_FLAGS "-m64 ${CMAKE_SHARED_LINKER_FLAGS}" )
-		set( CMAKE_EXE_LINKER_FLAGS "-lpthread -m64 ${CMAKE_EXE_LINKER_FLAGS}" )
-	else()
-		set( CMAKE_EXE_LINKER_FLAGS " -m64 ${CMAKE_EXE_LINKER_FLAGS}" )
-		set( CMAKE_SHARED_LINKER_FLAGS "-lpthread -m64 ${CMAKE_SHARED_LINKER_FLAGS}" )
-	endif()
-
-    else( )
-        set( CMAKE_CXX_FLAGS "-m32 -msse2 ${CMAKE_CXX_FLAGS}" )
-        set( CMAKE_C_FLAGS "-m32 -msse2 ${CMAKE_C_FLAGS}" )
-        set( CMAKE_SHARED_LINKER_FLAGS "-m32 ${CMAKE_SHARED_LINKER_FLAGS}" )
-        set( CMAKE_EXE_LINKER_FLAGS "-lpthread -m32 ${CMAKE_EXE_LINKER_FLAGS}" )
-    endif( )
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
+    set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" )
+    execute_process(COMMAND lsb_release -irc 
+        OUTPUT_VARIABLE suse-ubuntu)
+        STRING(FIND $(suse_ubuntu) "Ubuntu" pos)
+    SET(com -1)
+    if($(pos) EQUAL com)
+        set( CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}" )
+        set( CMAKE_EXE_LINKER_FLAGS "-lpthread ${CMAKE_EXE_LINKER_FLAGS}" )
+    else()
+        set( CMAKE_EXE_LINKER_FLAGS " ${CMAKE_EXE_LINKER_FLAGS}" )
+        set( CMAKE_SHARED_LINKER_FLAGS "-lpthread ${CMAKE_SHARED_LINKER_FLAGS}" )
+    endif()
 else( )
     message( AUTHOR_WARNING "Compiler not recognized.  Using default flags." )
 endif( )
@@ -187,18 +162,10 @@ message( STATUS "CMAKE_CXX_COMPILER release flags: " ${CMAKE_CXX_FLAGS_RELEASE} 
 message( STATUS "CMAKE_CXX_COMPILER relwithdebinfo flags: " ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} )
 message( STATUS "CMAKE_EXE_LINKER link flags: " ${CMAKE_EXE_LINKER_FLAGS} )
 
-# Depending on whether we are building for 64 or 32 bit, construct common paths and names that subdirectories can reference for their use
-if( Bolt_BUILD64 )
-    set( CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${Bolt_VERSION}-${CMAKE_HOST_SYSTEM_NAME}-x64" )
-    set( INCLUDE_DIR include )
-    set( BIN_DIR bin64 )
-    set( LIB_DIR lib64 )
-else( )
-    set( CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${Bolt_VERSION}-${CMAKE_HOST_SYSTEM_NAME}-x32" )
-    set( INCLUDE_DIR include )
-    set( BIN_DIR bin )
-    set( LIB_DIR lib )
-endif( )
+set( CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${Bolt_VERSION}-${CMAKE_HOST_SYSTEM_NAME}" )
+set( INCLUDE_DIR include )
+set( BIN_DIR bin )
+set( LIB_DIR lib )
 
 # Build AMP library (only header files for now)
 if( BUILD_ampBolt )
@@ -214,7 +181,10 @@ endif( )
 # Build OpenCL library
 if( BUILD_clBolt )
     # This will define OPENCL_FOUND
+    set(OpenCL_INCLUDE_DIR /opt/rocm/opencl/include)
+    set(OpenCL_LIBRARY /opt/rocm/opencl/lib/libOpenCL.so) 
     find_package( OpenCL REQUIRED )
+    set(OPENCL_INCLUDE_DIRS ${OpenCL_INCLUDE_DIR})
 
     if( OPENCL_FOUND AND IS_DIRECTORY "${BOLT_LIBRARY_DIR}/cl" AND IS_DIRECTORY "${PROJECT_SOURCE_DIR}/tools" )
         add_subdirectory( tools )
@@ -222,24 +192,8 @@ if( BUILD_clBolt )
     endif( )
 endif( )
 
-# Build TBB library
-if( BUILD_TBB )
-    # This will define TBB_FOUND
-    message ( STATUS "Setting up TBB paths")
-    find_package( TBB REQUIRED )
-    if ( TBB_FOUND )
-        message( STATUS "TBB is found installed in the path:" ${TBB_ROOT} )
-        #list( APPEND Bolt.Dependencies TBB )
-    else ( ) 
-        message( FATAL_ERROR "TBB not found. Install TBB and set TBB_ROOT env variable" )
-        #message( STATUS "Setting up TBB external..." )
-        #include( ExternalTBB )
-        #message( STATUS "TBB_ROOT configured as: " ${TBB_ROOT} )
-        #list( APPEND Bolt.Dependencies TBB )
-        #list( APPEND Bolt.Cmake.Args -DBUILD_TBB=TRUE )
-    endif( )
-endif( )
-
+set(TBB_BUILD_TESTS OFF)
+add_subdirectory(ThirdParty/tbb)
 
 # After libraries are built, built tests
 if( BUILD_tests )

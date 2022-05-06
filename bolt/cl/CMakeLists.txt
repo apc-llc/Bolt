@@ -23,7 +23,7 @@ set( Boost_DETAILED_FAILURE_MSG   ON )
 # set( Boost_DEBUG ON )
 # set( BOOST_LIB_DIAGNOSTIC ON )
 
-if( BOOST_ROOT )
+if( TRUE ) # BOOST_ROOT )
     # The root tree of BOOST was specified on the command line; use it to to find the specific Boost the user points too
     find_package( Boost ${Boost.VERSION} COMPONENTS thread system date_time chrono REQUIRED )
     # This will define Boost_FOUND
@@ -324,6 +324,7 @@ install( FILES
         DESTINATION
             ${INCLUDE_DIR}/bolt/btbb/detail )
 
+if (FALSE)
 # Install dependent Boost header files
 set( ROOT_EXTERNAL_BOOST ${PROJECT_BINARY_DIR}/../external/boost/src/Boost/boost )
 
@@ -409,8 +410,10 @@ install( FILES
             ${ROOT_EXTERNAL_BOOST}/integer_traits.hpp
         DESTINATION
             ${INCLUDE_DIR}/boost )
+endif()
 
 # Copy over our Boost static library dependencies
+if (FALSE)
 install( FILES
     ${Boost_SYSTEM_LIBRARY_DEBUG}
     ${Boost_THREAD_LIBRARY_DEBUG}
@@ -419,8 +422,10 @@ install( FILES
     DESTINATION ${LIB_DIR}
     CONFIGURATIONS Debug
     )
+endif()
 
 # Copy over our Boost static library dependencies
+if (FALSE)
 install( FILES
     ${Boost_SYSTEM_LIBRARY_RELEASE}
     ${Boost_THREAD_LIBRARY_RELEASE}
@@ -429,6 +434,7 @@ install( FILES
     DESTINATION ${LIB_DIR}
     CONFIGURATIONS Release
     )
+endif()
 
 # CPack configuration; include the executable into the package
 install( TARGETS clBolt.Runtime
